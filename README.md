@@ -147,6 +147,50 @@ Checks negotiated link speeds. Clients negotiating below 50 Mbps are flagged —
 **9. WAN Egress Test**
 Pings 8.8.8.8 sourced from the bridge IP. This specifically tests that bridge-sourced traffic is routing correctly to WAN — catches misconfigured PBR/VPN policy that would let router-sourced traffic through but silently break client traffic.
 
+### Example Output
+
+```
+=== WiFi Network Forensic Audit ===
+[OK] Detected AP interfaces: ra0 rax0
+
+[OK] ra0 radio up | Channel: 6 (2.437 GHz) HT Mode: HE20
+[OK] rax0 radio up | Channel: 44 (5.220 GHz) HT Mode: HE80
+
+[Success] ra0: 7 client(s) associated
+[Success] rax0: 8 client(s) associated
+  [Info] Total associated clients: 15
+
+[OK] WiFi bridged to br-lan1
+  [Info] Initial counters recorded - waiting 45s for traffic
+
+[Success] ra0 traffic flow: +68395 RX / +21009 TX bytes
+[Success] rax0 traffic flow: +350072 RX / +243445 TX bytes
+
+--- Hardware Transmission Health (TX Errors) ---
+[OK] ra0: Clean transmission (0 hardware errors)
+[OK] rax0: Clean transmission (0 hardware errors)
+
+--- [ra0] Local Client Reachability ---
+  > Client: 10.10.0.192 [KP105] ... [OK] (ra0)
+  > Client: 10.10.0.155 [LGwebOSTV] ... [OK] (ra0)
+[Success] ra0: 4/4 random clients responded
+
+--- Physical Link Quality (RSSI) ---
+[Success] ra0: 7/7 clients have strong signal (>-75dBm)
+[Success] rax0: 8/8 clients have strong signal (>-75dBm)
+
+--- Signal-to-Noise Ratio (SNR) ---
+[Success] ra0: All clients have healthy SNR (>20dB) | Floor: -63dBm
+[Success] rax0: All clients have healthy SNR (>20dB) | Floor: -63dBm
+
+--- PHY Rate Quality (Negotiated Speed) ---
+[Warning] ra0: 7/14 clients negotiating < 50Mbps
+[Warning] rax0: 1/16 clients negotiating < 50Mbps
+
+[Success] WAN egress OK: bridge-sourced traffic reaches internet
+=== Audit Complete ===
+```
+
 ### Signal Thresholds Reference
 
 | Metric | Threshold | Flag |
@@ -169,6 +213,51 @@ A deep inspection of your wired topology, firewall posture, client connectivity,
 ./wired-audit.sh -t 60            # Custom traffic window
 ./wired-audit.sh -v               # Verbose: adds speedtest + raw kernel firewall dump
 ./wired-audit.sh -h               # Help
+```
+
+### Example Output
+
+```
+=== Wired Network Forensic Audit ===
+
+--- System Configuration & Policy Context ---
+[!] Policy Routing / VPN Logic Detected:
+    1:    from all iif lo lookup 16800
+    1101: not from all fwmark 0x8000/0xc000 lookup 8000
+
+[Firewall Zones]
+  Zone 'wan': Networks=[wan wan6] | Input=DROP / Forward=REJECT (NAT)
+  Zone 'lan1': Networks=[lan1] | Input=ACCEPT / Forward=ACCEPT
+
+[Firewall Audit: All Explicit Rules & Port Forwards]
+  [RULE]  Block-WAN-SSH: Allow wan -> Port 22 (tcp) -> DROP
+  [RULE]  lan1_to_ui: Allow lan1 -> Port 80 443 (tcp) -> ACCEPT
+  [NAT]   Forward-SSH-to-Device: wan:1010 -> LAN 10.10.0.100:22
+
+--- Physical & Logical Interface Audit ---
+Logical: lan1 -> Device: br-lan1
+    [Info] IP: 10.10.0.1 | MAC: 1e:ac:25:94:2e:9e
+    [ON]    DHCP Server Active (Limit: 100 hosts)
+    [UP]    Physical Port: lan2 | Speed: 1000Mbps (full) | Clean
+
+Logical: wan -> Device: eth1
+    [Info] IP: 83.252.60.209 | MAC: 94:83:c4:a9:31:7f
+    [Info] DHCP: Disabled
+    [UP]    Physical Port: eth1 | Speed: 1000Mbps (full) | History: 74 PhyErrors (Monitor if increasing)
+
+--- Wired Client Reachability ---
+Scanning lan1 (br-lan1)...
+  [Info] Detected 5 wired client(s). Testing reachability...
+  > Client: 10.10.0.177 (c8:d0:83:b1:a2:27) [Vardagsrum] [REACHABLE] ... [OK]
+  > Client: 10.10.0.100 (2c:cf:67:bf:9e:6d) [pi5] [REACHABLE] ... [OK]
+  > Client: 10.10.0.158 (00:05:cd:fd:4b:48) [Marantz-SR6013] [REACHABLE] ... [OK]
+  > [WAN Gateway] 83.252.60.1 (00:00:5e:00:01:1e) ... [Ping: Blocked] [Internet: OK] [DNS: OK]
+
+--- Active Traffic & Hardware Health (30s Sample) ---
+  [ACTIVE] lan1 (br-lan1): RX: 10 KB/s | TX: 37 KB/s
+  [ACTIVE] wan (eth1): RX: 87 KB/s | TX: 11 KB/s
+
+=== Audit Complete ===
 ```
 
 ### Audit Stages
