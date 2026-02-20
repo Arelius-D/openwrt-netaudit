@@ -1,4 +1,4 @@
-# openwrt-netaudit
+# OpenWrt Net Audit
 
 A suite of forensic network audit and RF management tools for OpenWrt routers running on **MediaTek hardware** (GL.iNet GL-MT6000 and compatible). Built for operators who want real diagnostic depth from the shell — no GUI, no guesswork.
 
