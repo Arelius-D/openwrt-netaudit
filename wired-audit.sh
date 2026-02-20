@@ -42,7 +42,7 @@ while [ "$#" -gt 0 ]; do
     shift
 done
 
-echo "=== Wired Network Forensic Audit (Final 1.4) ==="
+echo "=== Wired Network Forensic Audit ==="
 echo "[Info] Gathering System Context & Topology..."
 echo ""
 echo "${C}--- System Configuration & Policy Context ---${N}"
